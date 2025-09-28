@@ -29,3 +29,54 @@ postgresql://<user>:<password>@<host>:<port>/<dbname>
 | DB_MIN_CONN | 2 |
 | DB_MAX_CONN | 10 |
 | DATABASE_URL | postgresql://teealloytest:test@localhost:5432/teealloydb |
+
+# API
+```
+POST /api/auth/verify-game-token
+```
+请求头:
+```
+Content-Type: application/json
+Authorization: Bearer <API-Key>
+X-Server-Address: <请求服务器IP>
+```
+请求体:
+```json
+{
+  "game_token": "string"
+}
+```
+成功响应:
+```json
+{
+  "success": true,
+  "user": {
+    "user_id": UUID,
+    "username": String,
+    "nickname": String,
+    "reputation": Int,
+    "created_at": Timestamp
+  }
+}
+```
+
+错误响应:
+```json
+400 Bad Request
+{
+  "success": false,
+  "error": "Missing or invalid game_token"
+}
+
+401 Unauthorized
+{
+  "success": false,
+  "error": "Invalid or expired game_token"
+}
+
+404 Not Found
+{
+  "success": false,
+  "error": "User not found"
+}
+```
