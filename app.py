@@ -6,9 +6,8 @@ from config import Config
 import os
 from extensions import csrf
 
-
-app = Flask(__name__)
 def create_app():
+    app = Flask(__name__)
     app.config.from_object(Config)
     app.permanent_session_lifetime = timedelta(minutes=60)
 
