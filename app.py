@@ -5,11 +5,19 @@ from datetime import timedelta
 from config import Config
 import os
 from extensions import csrf
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     app.permanent_session_lifetime = timedelta(minutes=60)
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app,
+        x_for=1,
+        x_proto=1,
+        x_host=1,
+        x_prefix=1
+    )
 
     # 注册蓝图
     from routes.main import main_bp
