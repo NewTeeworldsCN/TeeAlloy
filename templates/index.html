@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="form-card" style="text-align: center;">
+    <!-- 页面标题 -->
+    <div style="margin-bottom: 30px;">
+      <div class="logo-badge" style="margin: 0 auto 16px; font-size: 2rem;">
+        🔐
+      </div>
+      <h2>欢迎</h2>
+      <p class="subtitle">安全认证系统</p>
+    </div>
+
+    {% if user %}
+      <!-- 已登录：显示跳转提示 -->
+      <div class="alert alert-info" style="background: #e0f2fe; color: #0369a1; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+        您已登录，正在跳转到仪表盘...
+      </div>
+      <script>
+        // 已登录，跳转到 dashboard
+        setTimeout(() => {
+          window.location.href = '{{ url_for("main.dashboard") }}';
+        }, 1000); // 1秒后跳转
+      </script>
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">立即进入仪表盘</a>
+    {% else %}
+      <!-- 未登录：显示跳转提示 -->
+      <div class="alert alert-warning" style="background: #fff7ed; color: #b45309; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+        您尚未登录，正在跳转到登录页面...
+      </div>
+      <script>
+        // 未登录，跳转到 login
+        setTimeout(() => {
+          window.location.href = '{{ url_for("auth.login") }}';
+        }, 1000);
+      </script>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-primary">立即登录</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

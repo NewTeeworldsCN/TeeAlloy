@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="board-container">
+  <div class="form-card">
+    <h2>你的新 Game Token</h2>
+    <p style="color: red; font-weight: bold;">请立即复制！关闭页面后将无法查看！</p>
+
+    <div style="background:#f0f0f0;padding:15px;border-radius:8px;font-family:monospace;">
+      {{ token }}
+    </div>
+
+    <button onclick="copyToken()" class="btn btn-primary" style="margin-top:15px;">复制</button>
+    <a href="{{ url_for('main.tokens') }}" class="btn btn-secondary" style="margin-top:15px;">完成</a>
+
+    <script>
+      function copyToken() {
+        const text = "{{ token }}";
+        navigator.clipboard.writeText(text).then(() => {
+          alert("已复制到剪贴板！");
+        }).catch(err => {
+          console.error('Copy failed', err);
+          alert("复制失败：" + err);
+        });
+      }
+    </script>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="form-card">
+        <div class="logo-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                <circle cx="12" cy="9" r="3"></circle>
+            </svg>
+        </div>
+
+        <h2>您的备份码</h2>
+        <p class="subtitle">请妥善保存这些备份码，用于无法访问身份验证器时登录。</p>
+
+        <ul class="backup-codes-list">
+            {% for code in codes %}
+                <li><strong>{{ code }}</strong></li>
+            {% endfor %}
+        </ul>
+
+        <div class="auth-footer">
+            <p>已保存备份码？
+                <a href="{{ url_for('main.dashboard') }}" class="link-primary">返回仪表盘</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

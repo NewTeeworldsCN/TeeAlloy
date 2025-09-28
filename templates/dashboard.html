@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="board-container">
+  <div class="form-card" style="text-align: left;">
+    <!-- 头部信息 -->
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div class="logo-badge" style="margin: 0 auto 16px;">
+        👤
+      </div>
+      <h2>仪表盘</h2>
+      <p class="subtitle">管理你的账号设置</p>
+    </div>
+    
+    <!-- 显示消息 -->
+    {% with messages = get_flashed_messages() %}
+      {% for message in messages %}
+        <p style="
+          padding: 10px; 
+          margin: 10px 0; 
+          border-radius: 6px; 
+          background-color: 
+            {% if '成功' in message or '奖励' in message %}#d4edda; color: #155724
+            {% elif '不足' in message or '无效' in message or '失败' in message %}#f8d7da; color: #721c24
+            {% else %}#fff3cd; color: #856404
+            {% endif %};
+        ">
+          {{ message }}
+        </p>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- 用户信息 -->
+    <div style="margin-bottom: 30px;">
+      <p><strong>UUID:</strong> {{ user.id }}</p>
+      <p><strong>用户名:</strong> {{ user.username }}</p>
+      <p>
+        <strong>昵称:</strong> 
+        <span id="nickname-display" style="margin-right: 8px;">{{ user.nickname or '未设置' }}</span>
+
+        <!-- 编辑按钮 -->
+        <button type="button" 
+                id="edit-nickname-btn" 
+                class="btn btn-outline-secondary btn-sm"
+                style="font-size: 0.875rem; padding: 0.25rem 0.5rem;">
+          编辑
+        </button>
+
+        <!-- 编辑表单（默认隐藏） -->
+        <form id="nickname-form" method="POST" action="{{ url_for('auth.auth_update_nickname') }}" style="display: none; margin-left: 2px; align-items: center; gap: 8px; flex-wrap: nowrap;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" 
+                name="nickname" 
+                value="{{ user.nickname or '' }}" 
+                maxlength="16" 
+                required
+                style="padding: 0.375rem; font-size: 0.875rem; width: 120px; border: 1px solid #ddd; border-radius: 4px;">
+
+          <button type="submit" class="btn btn-success btn-sm" style="font-size: 0.875rem; padding: 0.25rem 0.5rem;">保存</button>
+          <button type="button" 
+                  id="cancel-nickname-btn" 
+                  class="btn btn-secondary btn-sm" 
+                  style="font-size: 0.875rem; padding: 0.25rem 0.5rem;">取消</button>
+        </form>
+      </p>
+      <p><strong>注册时间:</strong> {{ user.created_at }}</p>
+      <p><strong>上次登录:</strong> {{ user.last_login or 'First time' }}</p>
+    </div>
+
+    <!-- 管理员入口 -->
+    {% if user.is_admin %}
+    <div style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc3545;">
+      <h3 style="color: #dc3545; margin-top: 0;">管理员功能</h3>
+      <p>你拥有管理员权限，可以管理用户账户。</p>
+      <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-danger" style="background-color: #dc3545; border-color: #dc3545;">
+        👮 管理员面板
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- 安全信息 -->
+    <h3 style="color: var(--gray-dark); margin: 24px 0 12px 0; font-size: 1.3rem;">安全</h3>
+    <p>声望: 
+      <span style="color: {% if reputation >= 50 %}#10b981; font-weight:600{% else %}var(--danger);{% endif %};">
+        {{ reputation }}
+      </span>
+      {% if reputation == 0 and totp_enabled %}
+        (登出使用2FA验证即可加10声望)
+      {% endif %}
+    </p>
+    <p>2FA: 
+      <span style="color: {% if totp_enabled %}#10b981; font-weight:600{% else %}var(--danger);{% endif %};">
+        {{ '已设置' if totp_enabled else '未设置' }}
+      </span>
+    </p>
+
+    <!-- 设置 2FA 链接 -->
+    <p style="margin: 16px 0;">
+      <a href="{{ url_for('auth.setup_totp') }}" class="link-primary">
+        {% if totp_enabled %}
+            修改2FA设置
+        {% else %}
+            设置2FA验证
+        {% endif %}
+      </a>
+    </p>
+    <p style="margin: 16px 0;">
+      <a href="{{ url_for('main.tokens') }}" class="link-primary">
+        管理游戏访问令牌
+      </a>
+    </p>
+
+    <!-- 用户验证功能 -->
+    <h3 style="color: var(--gray-dark); margin: 24px 0 12px 0; font-size: 1.3rem;">用户验证</h3>
+
+    {% if reputation >= 50 %}
+      <p>你的声望 ≥ 50，可以验证其他用户。被你验证的用户将获得 <strong>30 或 50</strong> 声望（取决于你的声望水平）。</p>
+
+      <form method="POST" action="{{ url_for('main.endorse_user') }}" style="margin: 16px 0; display: flex; gap: 10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input 
+          type="text" 
+          name="endorsee_id" 
+          placeholder="输入对方的UUID" 
+          required 
+          style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"
+          maxlength="36"
+        >
+        <button type="submit" style="
+          background-color: #28a745; 
+          color: white; 
+          border: none; 
+          padding: 10px 16px; 
+          border-radius: 6px; 
+          font-size: 14px; 
+          cursor: pointer;">
+          验证
+        </button>
+      </form>
+    {% else %}
+      <p style="color: #6c757d;">声望需达到 <strong>50</strong> 才能验证他人。</p>
+      <p style="font-size: 0.9rem; color: #888;">通过绑定 GitHub、设置 2FA、活跃参与等方式提升声望。</p>
+    {% endif %}
+
+    <!-- GitHub 绑定区域 -->
+    <h3 style="color: var(--gray-dark); margin: 24px 0 12px 0; font-size: 1.3rem;">第三方账号</h3>
+    {% if github %}
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <img 
+          src="{{ github.avatar_url }}?s=64" 
+          alt="GitHub 头像" 
+          style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e1e4e8;"
+        >
+        <div>
+          <p style="margin: 0; font-weight: 600;">已绑定 GitHub 账号</p>
+          <p style="margin: 0; color: #555; font-size: 0.9rem;">@{{ github.github_login }}</p>
+        </div>
+      </div>
+    {% else %}
+      <p>尚未绑定 GitHub 账号。</p>
+      <p style="margin: 16px 0;">
+        <a href="{{ url_for('github.github_login') }}" class="btn btn-secondary btn-block">
+          🔗 绑定 GitHub 账号
+        </a>
+      </p>
+    {% endif %}
+
+    <!-- 登出按钮 -->
+    <a href="{{ url_for('main.logout') }}" class="btn btn-primary btn-block">登出</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const editBtn = document.getElementById('edit-nickname-btn');
+    const cancelBtn = document.getElementById('cancel-nickname-btn');
+    const displaySpan = document.getElementById('nickname-display');
+    const form = document.getElementById('nickname-form');
+
+    // 点击“编辑”按钮
+    editBtn.addEventListener('click', function () {
+      form.style.display = 'inline-flex';  // 显示表单
+      displaySpan.style.display = 'none';   // 隐藏昵称
+      editBtn.style.display = 'none';       // 隐藏编辑按钮
+    });
+
+    // 点击“取消”按钮
+    cancelBtn.addEventListener('click', function () {
+      form.style.display = 'none';          // 隐藏表单
+      displaySpan.style.display = 'inline'; // 显示昵称
+      editBtn.style.display = 'inline';     // 显示编辑按钮
+    });
+  });
+</script>
+{% endblock %}

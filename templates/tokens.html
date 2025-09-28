@@ -1,0 +1,91 @@
+<!-- templates/tokens.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="board-container">
+  <div class="form-card" style="text-align: left;">
+    <!-- 头部 -->
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div class="logo-badge" style="margin: 0 auto 16px;">🔐</div>
+      <h2>访问令牌</h2>
+      <p class="subtitle">管理你的游戏服务器访问凭证</p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <!-- 当前状态 -->
+    {% if has_token %}
+      <div style="background-color: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+        <p><strong>状态:</strong> ✅ 已启用</p>
+        <p><strong>创建时间:</strong> {{ created_at.strftime('%Y-%m-%d %H:%M:%S') if created_at else '-' }}</p>
+        <p><strong>最后更新:</strong> {{ updated_at.strftime('%Y-%m-%d %H:%M:%S') if updated_at else '-' }}</p>
+        <p><strong>最后使用:</strong> 
+          {% if last_used %}
+            {{ last_used.strftime('%Y-%m-%d %H:%M:%S') }}
+          {% else %}
+            尚未使用
+          {% endif %}
+        </p>
+      </div>
+
+      <form action="{{ url_for('main.refresh_token') }}" method="post" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-warning" style="margin-right: 10px;">
+          🔁 刷新 Token
+        </button>
+      </form>
+
+      <form action="{{ url_for('main.revoke_token') }}" method="post" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger">
+          ❌ 撤销 Token
+        </button>
+      </form>
+
+      <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; font-size: 0.9rem;">
+        <strong>⚠️ 注意：</strong>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li>刷新后，旧 token 立即失效。</li>
+          <li>撤销后需重新生成才能用于游戏服务器登录。</li>
+          <li>请确保只在可信设备上使用此 token。</li>
+          <li>根据服务器要求输入token去验证</li>
+        </ul>
+      </div>
+    {% else %}
+      <div style="background-color: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+        <p><strong>状态:</strong> ⛔ 未生成</p>
+        <p>你还没有为游戏服务器创建访问令牌。</p>
+      </div>
+
+      <form action="{{ url_for('main.generate_token') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary btn-block">
+          ➕ 生成 Game Token
+        </button>
+      </form>
+
+      <div style="margin-top: 20px; padding: 15px; background-color: #e7f5ff; border: 1px solid #b8daff; border-radius: 8px; font-size: 0.9rem;">
+        <strong>ℹ️ 提示：</strong>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li>生成后请立即复制并安全保存，系统不会再次显示明文。</li>
+          <li>该 token 允许你在游戏服务器中自动登录，无需输入密码。</li>
+          <li>建议定期刷新以增强安全性。</li>
+        </ul>
+      </div>
+    {% endif %}
+
+    <!-- 返回链接 -->
+    <p style="margin-top: 30px;">
+      <a href="{{ url_for('main.dashboard') }}" class="link-secondary">&lt; 返回仪表盘</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

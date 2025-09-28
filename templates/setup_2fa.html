@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="form-card">
+        <div class="logo-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                <circle cx="12" cy="9" r="3"></circle>
+            </svg>
+        </div>
+
+        <h2>设置双重验证</h2>
+        <p class="subtitle">请使用您的身份验证器应用扫描以下二维码：</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <img src="{{ qr_image }}" alt="QR Code" class="qr-code-image">
+
+        <form action="{{ url_for('auth.setup_totp') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- 输入6位数字验证码 -->
+            <div class="input-group">
+                <label for="token" class="floating-label">请输入6位验证码</label>
+                <input type="text"
+                       id="token"
+                       name="token"
+                       class="input-field"
+                       required
+                       placeholder=" ">
+                <span class="bar"></span>
+            </div>
+
+            <button type="submit" name="action" value="enable" class="btn btn-primary btn-block">
+                启用 2FA
+            </button>
+            <button type="submit" name="action" value="disable" onclick="return confirm('确定要关闭2FA吗？')" class="btn btn-secondary btn-block">
+                关闭 2FA
+            </button>
+        </form>
+        <!-- 返回按钮 -->
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary" style="padding: 12px 24px; display: inline-block; width: auto;">
+            返回仪表盘
+          </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const inputGroups = document.querySelectorAll('.input-group');
+
+    inputGroups.forEach(group => {
+      const input = group.querySelector('.input-field');
+      const label = group.querySelector('.floating-label');
+      const bar = group.querySelector('.bar');
+
+      function updateLabelAndBar() {
+        if (input.value.trim() !== '') {
+          label.classList.add('active');
+        } else {
+          label.classList.remove('active');
+        }
+      }
+
+      input.addEventListener('focus', () => {
+        label.classList.add('active');
+        bar.style.width = '100%';
+      });
+
+      input.addEventListener('blur', () => {
+        if (input.value.trim() === '') {
+          label.classList.remove('active');
+        }
+        bar.style.width = '0';
+      });
+
+      input.addEventListener('input', updateLabelAndBar);
+      updateLabelAndBar();
+    });
+  });
+</script>
+{% endblock %}

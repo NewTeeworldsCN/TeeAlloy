@@ -1,0 +1,73 @@
+<!-- templates/admin_whitelist.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="board-container">
+  <div class="form-card" style="text-align: left;">
+    <!-- 头部 -->
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div class="logo-badge" style="margin: 0 auto 16px;">🔐</div>
+      <h2>API 白名单管理</h2>
+      <p class="subtitle">管理可调用 Game Token 接口的游戏服务器</p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <!-- 添加表单 -->
+    <form method="post" action="{{ url_for('admin.add_whitelist_entry') }}" style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3 style="margin-top: 0;">➕ 添加新服务器</h3>
+      
+      <label for="server_address">服务器地址（IP 或域名）:</label>
+      <input type="text" name="server_address" id="server_address" required style="width:100%; padding:8px; margin:4px 0; border:1px solid #ccc; border-radius:4px;">
+      <small>例如：192.168.1.100 或 game.mygame.com</small><br><br>
+
+      <label for="api_key">API 密钥（明文）:</label>
+      <input type="text" name="api_key" id="api_key" required style="width:100%; padding:8px; margin:4px 0; border:1px solid #ccc; border-radius:4px;">
+      <small>建议使用高强度随机字符串（如 32 字符以上）</small><br><br>
+
+      <button type="submit" class="btn btn-primary">添加到白名单</button>
+    </form>
+
+    <!-- 当前列表 -->
+    <h3>当前白名单 (共 {{ total_count }} 条)</h3>
+    {% if grouped_servers %}
+      {% for addr, keys in grouped_servers.items() %}
+        <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
+          <strong style="font-size: 1.1em;">📍 {{ addr }}</strong>
+          <ul style="list-style: none; padding: 0; margin: 10px 0 0 0;">
+            {% for key in keys %}
+              <li style="margin: 8px 0; padding: 8px; background:#fff; border:1px solid #eee; border-radius:4px; font-size:0.9em;">
+                <code style="font-size:0.85em;">{{ key.api_key_hash[:16] }}...{{ key.api_key_hash[-16:] }}</code>
+                <span style="color:#666; font-size:0.8em;">(添加于 {{ key.created_at.strftime('%Y-%m-%d %H:%M') }})</span>
+                <a href="{{ url_for('admin.remove_whitelist_entry', server_addr=addr, api_key_hash=key.api_key_hash) }}"
+                   onclick="return confirm('确定要删除这个密钥吗？');"
+                   style="float:right; color:#dc3545; text-decoration:underline;">
+                  删除
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p><em>暂无白名单记录。</em></p>
+    {% endif %}
+
+    <!-- 返回链接 -->
+    <div style="margin-top: 30px; text-align: center;">
+      <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-secondary" style="padding: 12px 24px; display: inline-block; width: auto;">
+            返回管理员面板
+      </a>
+      </div>
+  </div>
+</div>
+{% endblock %}

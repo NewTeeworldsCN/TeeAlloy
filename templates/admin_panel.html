@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="board-container">
+  <div class="form-card" style="text-align: left; padding: 40px;">
+    <!-- 头部信息 -->
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div class="logo-badge" style="margin: 0 auto 16px;">
+        👮
+      </div>
+      <h2>管理员面板</h2>
+      <p class="subtitle">管理用户账户</p>
+    </div>
+    <p>
+      <a href="{{ url_for('admin.whitelist_management') }}" class="btn btn-outline">
+        🔐 管理 API 白名单
+      </a>
+    </p>
+
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <!-- 搜索表单 -->
+    <div style="margin-bottom: 20px;">
+      <form method="GET" style="display: flex; gap: 10px;">
+        <input 
+          type="text" 
+          name="search" 
+          placeholder="搜索用户名、昵称或ID..." 
+          value="{{ search_query or '' }}"
+          style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+        >
+        <button type="submit" class="btn btn-primary" style="background-color: #007bff; border-color: #007bff; padding: 10px 20px;">
+          搜索
+        </button>
+      </form>
+    </div>
+
+    <!-- 统计信息 -->
+    <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; display: flex; gap: 20px; flex-wrap: wrap;">
+      <p style="margin: 0;"><strong>总用户数:</strong> {{ total_users }}</p>
+      <p style="margin: 0;"><strong>当前页面:</strong> {{ current_page }} / {{ total_pages }}</p>
+    </div>
+
+    <!-- 用户列表表格 -->
+    <div style="overflow-x: auto; margin-bottom: 20px;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: #f8f9fa;">
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 60px;">ID</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 120px;">用户名</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 120px;">昵称</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 80px;">声望</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 80px;">2FA</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 80px;">管理员</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 100px;">GitHub</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 140px;">注册时间</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 140px;">最后登录</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 120px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr style="border-bottom: 1px solid #dee2e6; transition: background-color 0.2s; {% if user.is_banned %}background-color: #ffebee;{% endif %}">
+            <td style="padding: 12px;">{{ user.id }}</td>
+            <td style="padding: 12px;">{{ user.username }}</td>
+            <td style="padding: 12px;">{{ user.nickname }}</td>
+            <td style="padding: 12px;">
+              <span style="color: {% if (user.reputation_score or 0) >= 50 %}#10b981; font-weight:600{% elif (user.reputation_score or 0) > 0 %}#f59e0b; font-weight:600{% else %}#ef4444; font-weight:600{% endif %};">
+                {{ user.reputation_score or 0 }}
+              </span>
+            </td>
+            <td style="padding: 12px;">
+              {% if user.is_2fa_enabled %}
+                <span style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px;">已启用</span>
+              {% else %}
+                <span style="background-color: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px;">未启用</span>
+              {% endif %}
+            </td>
+            <td style="padding: 12px;">
+              {% if user.is_admin %}
+                <span style="background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px;">是</span>
+              {% else %}
+                否
+              {% endif %}
+            </td>
+            <td style="padding: 12px;">
+              {% if user.github_login %}
+                <span style="background-color: #24292e; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">{{ user.github_login }}</span>
+              {% else %}
+                无
+              {% endif %}
+            </td>
+            <td style="padding: 12px;">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</td>
+            <td style="padding: 12px;">{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else '从未登录' }}</td>
+            <td style="padding: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                {% if user.is_banned %}
+                  <!-- 用户被封禁，显示撤销封禁按钮 -->
+                  <form method="POST" action="{{ url_for('admin.admin_unban_user', user_id=user.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success" style="background-color: #28a745; border-color: #28a745; padding: 6px 12px; font-size: 12px; margin: 0;" onclick="return confirm('确定要撤销封禁此用户吗？此操作将恢复用户声望到基础分数（50分）。');">
+                      撤销封禁
+                    </button>
+                  </form>
+                {% else %}
+                  <!-- 用户未被封禁，显示封禁按钮 -->
+                  <form method="POST" action="{{ url_for('admin.admin_ban_user', user_id=user.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger" style="background-color: #dc3545; border-color: #dc3545; padding: 6px 12px; font-size: 12px; margin: 0;" onclick="return confirm('确定要封禁此用户吗？此操作将把用户声望降为0并触发相关处理。');">
+                      封禁
+                    </button>
+                  </form>
+                {% endif %}
+                
+                <form method="POST" action="{{ url_for('admin.admin_toggle_admin', user_id=user.id) }}" style="display: inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d; padding: 6px 12px; font-size: 12px; margin: 0;">
+                    {% if user.is_admin %}撤销管理{% else %}授予管理{% endif %}
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 分页 -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+      <!-- 首页 -->
+      {% if current_page > 1 %}
+        <a href="{{ url_for('admin.admin_panel', page=1, search=search_query) }}" class="page-link">首页</a>
+      {% else %}
+        <span class="page-disabled">首页</span>
+      {% endif %}
+
+      <!-- 上一页 -->
+      {% if current_page > 1 %}
+        <a href="{{ url_for('admin.admin_panel', page=current_page-1, search=search_query) }}" class="page-link">←</a>
+      {% else %}
+        <span class="page-disabled">←</span>
+      {% endif %}
+
+      <!-- 页码逻辑 -->
+      {% set delta = 2 %}
+      {% set left = current_page - delta %}
+      {% set right = current_page + delta %}
+
+      <!-- 第一页 -->
+      {% if current_page > 3 %}
+        <a href="{{ url_for('admin.admin_panel', page=1, search=search_query) }}" class="page-link">1</a>
+        {% if current_page > 4 %}
+          <span class="page-ellipsis">⋯</span>
+        {% endif %}
+      {% endif %}
+
+      <!-- 中间页码 -->
+      {% for num in range(1, total_pages + 1) %}
+        {% if num == current_page %}
+          <span class="page-current">{{ num }}</span>
+        {% elif (num <= 3 or num >= total_pages - 2) or (num >= left and num <= right) %}
+          <a href="{{ url_for('admin.admin_panel', page=num, search=search_query) }}" class="page-link">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      <!-- 最后一页 -->
+      {% if current_page < total_pages - 2 %}
+        {% if current_page < total_pages - 3 %}
+          <span class="page-ellipsis">⋯</span>
+        {% endif %}
+        <a href="{{ url_for('admin.admin_panel', page=total_pages, search=search_query) }}" class="page-link">{{ total_pages }}</a>
+      {% endif %}
+
+      <!-- 下一页 -->
+      {% if current_page < total_pages %}
+        <a href="{{ url_for('admin.admin_panel', page=current_page+1, search=search_query) }}" class="page-link">→</a>
+      {% else %}
+        <span class="page-disabled">→</span>
+      {% endif %}
+
+      <!-- 末页 -->
+      {% if current_page < total_pages %}
+        <a href="{{ url_for('admin.admin_panel', page=total_pages, search=search_query) }}" class="page-link">末页</a>
+      {% else %}
+        <span class="page-disabled">末页</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- 返回按钮 -->
+    <div style="margin-top: 30px; text-align: center;">
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary" style="padding: 12px 24px; display: inline-block; width: auto;">
+        返回仪表盘
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

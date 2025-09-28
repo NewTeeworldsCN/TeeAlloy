@@ -1,0 +1,150 @@
+<!-- templates/auth.register.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="form-card">
+        <div class="logo-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                <circle cx="12" cy="9" r="3"></circle>
+            </svg>
+        </div>
+
+        <h2>创建您的账户</h2>
+        <p class="subtitle">加入 TeeAlloy，开启安全身份管理</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('auth.register') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- 用户名 -->
+            <div class="input-group">
+                <label for="username" class="floating-label">用户名</label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       class="input-field"
+                       required
+                       autocomplete="username"
+                       placeholder=" ">
+                <span class="bar"></span>
+            </div>
+
+            <!-- 昵称 -->
+            <div class="input-group">
+                <label for="nickname" class="floating-label">昵称</label>
+                <input type="text"
+                    id="nickname"
+                    name="nickname"
+                    class="input-field"
+                    required
+                    autocomplete="name"
+                    placeholder=" ">
+                <span class="bar"></span>
+            </div>
+
+            <!-- 密码 -->
+            <div class="input-group">
+                <label for="password" class="floating-label">密码</label>
+                <input type="password"
+                       id="password"
+                       name="password"
+                       class="input-field"
+                       required
+                       autocomplete="new-password"
+                       placeholder=" ">
+                <span class="bar"></span>
+            </div>
+
+            <!-- 确认密码 -->
+            <div class="input-group">
+                <label for="confirm_password" class="floating-label">确认密码</label>
+                <input type="password"
+                       id="confirm_password"
+                       name="confirm_password"
+                       class="input-field"
+                       required
+                       autocomplete="new-password"
+                       placeholder=" ">
+                <span class="bar"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                创建账户
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>已有账户？
+                <a href="{{ url_for('auth.login') }}" class="link-primary">立即登录</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    console.log("JS loaded and DOM ready");
+    const inputGroups = document.querySelectorAll('.input-group');
+
+    inputGroups.forEach(group => {
+      const input = group.querySelector('.input-field');
+      const label = group.querySelector('.floating-label');
+      const bar = group.querySelector('.bar');
+
+      function updateLabelAndBar() {
+        if (input.value.trim() !== '') {
+          label.classList.add('active');
+        } else {
+          label.classList.remove('active');
+        }
+      }
+
+      input.addEventListener('focus', () => {
+        label.classList.add('active');
+        bar.style.width = '100%';
+      });
+
+      input.addEventListener('blur', () => {
+        if (input.value.trim() === '') {
+          label.classList.remove('active');
+        }
+        bar.style.width = '0';
+      });
+
+      input.addEventListener('input', updateLabelAndBar);
+      updateLabelAndBar();
+    });
+
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirm_password');
+    const form = document.querySelector('form');
+
+    // 实时检查
+    confirmInput.addEventListener('input', function () {
+      if (confirmInput.value && passwordInput.value !== confirmInput.value) {
+        confirmInput.setCustomValidity('密码不匹配，请重新输入。');
+      } else {
+        confirmInput.setCustomValidity('');
+      }
+    });
+
+    // 提交时检查
+    form.addEventListener('submit', function (e) {
+      if (passwordInput.value !== confirmInput.value) {
+        e.preventDefault();
+      }
+    });
+  });
+</script>
+{% endblock %}

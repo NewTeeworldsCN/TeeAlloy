@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="form-card">
+        <div class="logo-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                <circle cx="12" cy="9" r="3"></circle>
+            </svg>
+        </div>
+
+        <h2>请输入双因素验证码</h2>
+        <p class="subtitle">使用 Google Authenticator 或 Microsoft Authenticator 生成验证码。</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('auth.verify_2fa') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- 输入6位数字验证码 -->
+            <div class="input-group">
+                <label for="token" class="floating-label">请输入6位验证码</label>
+                <input type="text"
+                       id="token"
+                       name="token"
+                       class="input-field"
+                       required
+                       placeholder=" ">
+                <span class="bar"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                验证
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>无法访问设备？
+                <a href="{{ url_for('auth.use_backup_codes') }}" class="link-primary">使用备份码</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const inputGroups = document.querySelectorAll('.input-group');
+
+    inputGroups.forEach(group => {
+      const input = group.querySelector('.input-field');
+      const label = group.querySelector('.floating-label');
+      const bar = group.querySelector('.bar');
+
+      function updateLabelAndBar() {
+        if (input.value.trim() !== '') {
+          label.classList.add('active');
+        } else {
+          label.classList.remove('active');
+        }
+      }
+
+      input.addEventListener('focus', () => {
+        label.classList.add('active');
+        bar.style.width = '100%';
+      });
+
+      input.addEventListener('blur', () => {
+        if (input.value.trim() === '') {
+          label.classList.remove('active');
+        }
+        bar.style.width = '0';
+      });
+
+      input.addEventListener('input', updateLabelAndBar);
+      updateLabelAndBar();
+    });
+  });
+</script>
+{% endblock %}
