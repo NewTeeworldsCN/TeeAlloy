@@ -247,6 +247,7 @@ def endorse_user(endorser_id, endorsee_id):
             related_user_id=endorser_id,
             description=f"被用户 {endorser_id} 验证"
         )
+        return
     raise PermissionError("数据库连接错误")
 
 def on_user_ban(banned_user_id, cursor=None):
