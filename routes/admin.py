@@ -1,5 +1,6 @@
 from flask import Blueprint, request, render_template, session, flash, redirect, url_for
 from utils.validators import validate_user_id
+from utils import generate_api_key
 from services.admin_service import get_all_users, ban_user, unban_user, toggle_admin_status
 from models.user import get_user_by_id
 from models.whitelist import (
@@ -107,7 +108,20 @@ def whitelist_management():
         from collections import defaultdict
         grouped = defaultdict(list)
         for s in servers:
-            grouped[s['server_address']].append(s)
+            # 判断是否是“刚刚创建”的记录（用于一次性显示明文）
+            show_plaintext = 'new_api_key_hash' in session and session['new_api_key_hash'] == s['api_key_hash']
+            item = {
+                'api_key_hash': s['api_key_hash'],
+                'created_at': s['created_at'],
+                'show_plaintext': show_plaintext,
+                'plaintext_api_key': session.get('new_api_key_plaintext') if show_plaintext else None
+            }
+            grouped[s['server_address']].append(item)
+
+        # 清除一次性 session（只显示一次）
+        if 'new_api_key_hash' in session:
+            session.pop('new_api_key_hash', None)
+            session.pop('new_api_key_plaintext', None)
 
         return render_template('admin_whitelist.html', 
                              grouped_servers=dict(grouped),
@@ -122,27 +136,29 @@ def whitelist_management():
 @admin_bp.route('/admin/whitelist/add', methods=['POST'])
 @require_admin
 def add_whitelist_entry():
-    """添加白名单条目"""
+    """添加白名单条目（系统自动生成 API Key）"""
     try:
         server_addr = request.form.get('server_address')
-        api_key = request.form.get('api_key')
-
-        if not server_addr or not api_key:
-            flash("服务器地址和 API 密钥均为必填项")
+        
+        if not server_addr:
+            flash("服务器地址为必填项")
             return redirect(url_for('admin.whitelist_management'))
 
         if len(server_addr) > 45:
             flash("服务器地址过长")
             return redirect(url_for('admin.whitelist_management'))
 
-        success = add_whitelist_server(server_addr.strip(), api_key)
+        plaintext_key, hashed_key = generate_api_key()
+
+        success = add_whitelist_server(server_addr.strip(), hashed_key)
         if success:
+            # ✅ 一次性在页面上显示明文 Key
+            session['new_api_key_hash'] = hashed_key
+            session['new_api_key_plaintext'] = plaintext_key
             flash(f"✅ 成功添加白名单: {server_addr}")
         else:
-            flash(f"⚠️ 该地址与密钥组合已存在: {server_addr}")
+            flash(f"⚠️ 该地址已存在，无需重复添加")
 
-    except ValueError as ve:
-        flash(f"输入错误: {ve}")
     except Exception as e:
         from flask import current_app
         current_app.logger.error(f"Add whitelist failed: {e}")
@@ -166,12 +182,10 @@ def remove_whitelist_entry(server_addr, api_key_hash):
 
         removed = remove_whitelist_server(server_addr, api_key_hash)
         if removed:
-            flash(f"🗑️ 已删除白名单记录: {server_addr} {api_key_hash}")
+            flash(f"🗑️ 已删除白名单记录: {server_addr}")
         else:
-            flash(f"🔍 未找到匹配的记录: {server_addr} {api_key_hash}")
+            flash(f"🔍 未找到匹配的记录")
 
-    except ValueError:
-        flash("API Key Hash 格式无效")
     except Exception as e:
         from flask import current_app
         current_app.logger.error(f"Remove whitelist failed: {e}")

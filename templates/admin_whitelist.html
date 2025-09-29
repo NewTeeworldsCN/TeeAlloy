@@ -11,30 +11,30 @@
       <p class="subtitle">管理可调用 Game Token 接口的游戏服务器</p>
     </div>
 
-    {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <ul class="flashes">
-          {% for message in messages %}
-            <li>{{ message }}</li>
+        <div style="margin-bottom: 20px;">
+          {% for category, message in messages %}
+            <p style="padding: 10px; margin: 0 0 10px; border-radius: 4px; background-color: 
+              {% if category == 'error' %}#f8d7da; color: #721c24{% elif category == 'success' %}#d4edda; color: #155724{% else %}#d1ecf1; color: #0c5460{% endif %};">
+              {{ message }}
+            </p>
           {% endfor %}
-        </ul>
+        </div>
       {% endif %}
     {% endwith %}
 
     <!-- 添加表单 -->
-    <form method="post" action="{{ url_for('admin.add_whitelist_entry') }}" style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+    <form method="post" action="{{ url_for('admin.add_whitelist_entry') }}" style="...">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <h3 style="margin-top: 0;">➕ 添加新服务器</h3>
+      <h3>添加新服务器</h3>
       
       <label for="server_address">服务器地址（IP 或域名）:</label>
-      <input type="text" name="server_address" id="server_address" required style="width:100%; padding:8px; margin:4px 0; border:1px solid #ccc; border-radius:4px;">
+      <input type="text" name="server_address" id="server_address" required 
+            style="width:100%; padding:8px; margin:4px 0; border:1px solid #ccc; border-radius:4px;">
       <small>例如：192.168.1.100 或 game.mygame.com</small><br><br>
 
-      <label for="api_key">API 密钥（明文）:</label>
-      <input type="text" name="api_key" id="api_key" required style="width:100%; padding:8px; margin:4px 0; border:1px solid #ccc; border-radius:4px;">
-      <small>建议使用高强度随机字符串（如 32 字符以上）</small><br><br>
-
-      <button type="submit" class="btn btn-primary">添加到白名单</button>
+      <button type="submit" class="btn btn-primary">生成密钥并添加</button>
     </form>
 
     <!-- 当前列表 -->
@@ -46,6 +46,13 @@
           <ul style="list-style: none; padding: 0; margin: 10px 0 0 0;">
             {% for key in keys %}
               <li style="margin: 8px 0; padding: 8px; background:#fff; border:1px solid #eee; border-radius:4px; font-size:0.9em;">
+                {% if key.show_plaintext %}
+                  <strong>新创建的密钥：</strong><br>
+                  <code style="color: #c7254e; background-color: #f9f2f4; padding: 5px; border-radius: 3px; font-size: 1em; word-break: break-all;">
+                    {{ key.plaintext_api_key }}
+                  </code><br>
+                  <small style="color: #666;">请立即保存！刷新后将只显示哈希。</small><br>
+                {% endif %}
                 <code style="font-size:0.85em;">{{ key.api_key_hash[:16] }}...{{ key.api_key_hash[-16:] }}</code>
                 <span style="color:#666; font-size:0.8em;">(添加于 {{ key.created_at.strftime('%Y-%m-%d %H:%M') }})</span>
                 <a href="{{ url_for('admin.remove_whitelist_entry', server_addr=addr, api_key_hash=key.api_key_hash) }}"
@@ -65,9 +72,9 @@
     <!-- 返回链接 -->
     <div style="margin-top: 30px; text-align: center;">
       <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-secondary" style="padding: 12px 24px; display: inline-block; width: auto;">
-            返回管理员面板
+        返回管理员面板
       </a>
-      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

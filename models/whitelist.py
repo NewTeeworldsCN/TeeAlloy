@@ -1,36 +1,21 @@
 # models/whitelist.py
 from models.database import get_db_cursor
-import hashlib
+from utils import hash_api_key
 import logging
 from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 
-def hash_api_key(api_key: str) -> str:
-    """
-    将 API Key 明文转换为 SHA-256 Hex 字符串（64字符）
-    :param api_key: 明文密钥
-    :return: SHA-256 Hex 编码字符串
-    """
-    if not isinstance(api_key, str):
-        raise ValueError("API key must be a string")
-    if not api_key.strip():
-        raise ValueError("API key cannot be empty or whitespace")
-    return hashlib.sha256(api_key.strip().encode('utf-8')).hexdigest()
-
-
-def add_whitelist_server(server_address: str, api_key: str) -> bool:
+def add_whitelist_server(server_address: str, api_key_hash: str) -> bool:
     """
     添加一个白名单服务器记录
     :param server_address: 服务器地址（IP 或域名），如 '192.168.1.100' 或 'game.mygame.com'
-    :param api_key: 明文 API 密钥
+    :param api_key_hash: API 密钥 Hash
     :return: 是否新增成功（False 可能是已存在）
     """
-    if not server_address or not api_key:
-        raise ValueError("server_address and api_key are required")
-
-    api_key_hash = hash_api_key(api_key)
+    if not server_address or not api_key_hash:
+        raise ValueError("server_address and api_key_hash are required")
 
     try:
         with get_db_cursor(commit_on_success=True) as cursor:

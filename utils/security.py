@@ -11,6 +11,7 @@ import base64
 import os
 import secrets
 import string
+import hashlib
 
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -82,3 +83,23 @@ def generate_secure_token(length=64):
     """生成安全的随机 token"""
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(length))
+
+def generate_api_key() -> tuple[str, str]:
+    """
+    生成高强度 API Key
+    :return: (明文 Key, SHA-256 哈希)
+    """
+    # 使用 secrets 生成 32 字节随机数据
+    raw_key = secrets.token_urlsafe(32)
+    clean_key = raw_key.replace('+', 'x').replace('/', 'y').replace('=', 'z')
+    api_key = f"sk_live_{clean_key[:48]}"
+
+    hashed = hashlib.sha256(api_key.encode('utf-8')).hexdigest()
+    return api_key, hashed
+
+def hash_api_key(api_key : str) -> str:
+    """
+    :return: SHA-256 哈希
+    """
+    hashed = hashlib.sha256(api_key.encode('utf-8')).hexdigest()
+    return hashed

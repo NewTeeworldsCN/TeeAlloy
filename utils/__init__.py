@@ -7,7 +7,7 @@ from .github import (
 )
 
 from .validators import validate_uuid, validate_user_id
-from .security import hash_password, check_password, generate_totp_secret, get_totp_uri, make_qr_code_image, encrypt_data, decrypt_data, get_fernet
+from .security import hash_password, check_password, generate_totp_secret, get_totp_uri, make_qr_code_image, encrypt_data, decrypt_data, get_fernet, generate_api_key, hash_api_key
 
 
 __all__ = [
