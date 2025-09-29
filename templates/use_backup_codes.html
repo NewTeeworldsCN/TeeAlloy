@@ -26,13 +26,12 @@
         <form action="{{ url_for('auth.use_backup_codes') }}" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="input-group">
-                <label for="token" class="floating-label">输入一个备份码</label>
                 <input type="text"
                        id="token"
                        name="token"
                        class="input-field"
                        required
-                       placeholder=" ">
+                       placeholder="输入一个备份码">
                 <span class="bar"></span>
             </div>
 
@@ -46,41 +45,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const inputGroups = document.querySelectorAll('.input-group');
-
-    inputGroups.forEach(group => {
-      const input = group.querySelector('.input-field');
-      const label = group.querySelector('.floating-label');
-      const bar = group.querySelector('.bar');
-
-      function updateLabelAndBar() {
-        if (input.value.trim() !== '') {
-          label.classList.add('active');
-        } else {
-          label.classList.remove('active');
-        }
-      }
-
-      input.addEventListener('focus', () => {
-        label.classList.add('active');
-        bar.style.width = '100%';
-      });
-
-      input.addEventListener('blur', () => {
-        if (input.value.trim() === '') {
-          label.classList.remove('active');
-        }
-        bar.style.width = '0';
-      });
-
-      input.addEventListener('input', updateLabelAndBar);
-      updateLabelAndBar();
-    });
-  });
-</script>
 {% endblock %}

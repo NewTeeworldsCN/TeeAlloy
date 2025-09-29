@@ -104,51 +104,16 @@ h2 {
   border-radius: 8px;
   outline: none;
   background: var(--gray-light);
-  transition: var(--transition);
+  transition: all 0.3s ease;
   color: var(--gray-dark);
+  box-sizing: border-box;
 }
 
-.input-field:focus {
+.input-field:focus,
+.input-field:not(:placeholder-shown) {
+  background: var(--white);
   border-color: var(--primary);
-  background: var(--white);
   box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-}
-
-/* 浮动标签 */
-.floating-label {
-  position: absolute;
-  left: 12px;
-  top: 14px;
-  font-size: 1rem;
-  color: var(--gray);
-  pointer-events: none;
-  transition: 0.3s ease all;
-}
-
-/* 标签上浮状态 */
-.floating-label.active {
-  top: -8px;
-  left: 8px;
-  font-size: 0.8rem;
-  color: var(--primary);
-  background: var(--white);
-  padding: 0 4px;
-  font-weight: 500;
-}
-
-/* 下划线动画条 */
-.bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--primary);
-  transition: var(--transition);
-}
-
-.input-field:focus ~ .bar {
-  width: 100%;
 }
 
 /* ===============

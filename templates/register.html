@@ -28,53 +28,49 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <!-- 用户名 -->
             <div class="input-group">
-                <label for="username" class="floating-label">用户名</label>
                 <input type="text"
                        id="username"
                        name="username"
                        class="input-field"
                        required
                        autocomplete="username"
-                       placeholder=" ">
+                       placeholder="用户名">
                 <span class="bar"></span>
             </div>
 
             <!-- 昵称 -->
             <div class="input-group">
-                <label for="nickname" class="floating-label">昵称</label>
                 <input type="text"
                     id="nickname"
                     name="nickname"
                     class="input-field"
                     required
                     autocomplete="name"
-                    placeholder=" ">
+                    placeholder="昵称">
                 <span class="bar"></span>
             </div>
 
             <!-- 密码 -->
             <div class="input-group">
-                <label for="password" class="floating-label">密码</label>
                 <input type="password"
                        id="password"
                        name="password"
                        class="input-field"
                        required
                        autocomplete="new-password"
-                       placeholder=" ">
+                       placeholder="密码">
                 <span class="bar"></span>
             </div>
 
             <!-- 确认密码 -->
             <div class="input-group">
-                <label for="confirm_password" class="floating-label">确认密码</label>
                 <input type="password"
                        id="confirm_password"
                        name="confirm_password"
                        class="input-field"
                        required
                        autocomplete="new-password"
-                       placeholder=" ">
+                       placeholder="确认密码">
                 <span class="bar"></span>
             </div>
 
@@ -90,61 +86,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-{% block scripts %}
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    console.log("JS loaded and DOM ready");
-    const inputGroups = document.querySelectorAll('.input-group');
-
-    inputGroups.forEach(group => {
-      const input = group.querySelector('.input-field');
-      const label = group.querySelector('.floating-label');
-      const bar = group.querySelector('.bar');
-
-      function updateLabelAndBar() {
-        if (input.value.trim() !== '') {
-          label.classList.add('active');
-        } else {
-          label.classList.remove('active');
-        }
-      }
-
-      input.addEventListener('focus', () => {
-        label.classList.add('active');
-        bar.style.width = '100%';
-      });
-
-      input.addEventListener('blur', () => {
-        if (input.value.trim() === '') {
-          label.classList.remove('active');
-        }
-        bar.style.width = '0';
-      });
-
-      input.addEventListener('input', updateLabelAndBar);
-      updateLabelAndBar();
-    });
-
-    const passwordInput = document.getElementById('password');
-    const confirmInput = document.getElementById('confirm_password');
-    const form = document.querySelector('form');
-
-    // 实时检查
-    confirmInput.addEventListener('input', function () {
-      if (confirmInput.value && passwordInput.value !== confirmInput.value) {
-        confirmInput.setCustomValidity('密码不匹配，请重新输入。');
-      } else {
-        confirmInput.setCustomValidity('');
-      }
-    });
-
-    // 提交时检查
-    form.addEventListener('submit', function (e) {
-      if (passwordInput.value !== confirmInput.value) {
-        e.preventDefault();
-      }
-    });
-  });
-</script>
 {% endblock %}

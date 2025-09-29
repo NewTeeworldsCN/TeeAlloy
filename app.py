@@ -52,5 +52,5 @@ def debug_routes():
 if __name__ == '__main__':
     app = create_app()
     debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
-    host = '127.0.0.1' if debug_mode else '0.0.0.0'
+    host = '0.0.0.0'
     app.run(debug=debug_mode, host=host, port=5000)

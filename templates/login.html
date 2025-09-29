@@ -28,27 +28,25 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <!-- 用户名 -->
             <div class="input-group">
-                <label for="username" class="floating-label">用户名</label>
                 <input type="text"
                        id="username"
                        name="username"
                        class="input-field"
                        required
                        autocomplete="username"
-                       placeholder=" ">
+                       placeholder="用户名">
                 <span class="bar"></span>
             </div>
 
             <!-- 密码 -->
             <div class="input-group">
-                <label for="password" class="floating-label">密码</label>
                 <input type="password"
                        id="password"
                        name="password"
                        class="input-field"
                        required
                        autocomplete="current-password"
-                       placeholder=" ">
+                       placeholder="密码">
                 <span class="bar"></span>
             </div>
 
@@ -86,41 +84,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-{% block scripts %}
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    console.log("JS loaded and DOM ready");
-    const inputGroups = document.querySelectorAll('.input-group');
-
-    inputGroups.forEach(group => {
-      const input = group.querySelector('.input-field');
-      const label = group.querySelector('.floating-label');
-      const bar = group.querySelector('.bar');
-
-      function updateLabelAndBar() {
-        if (input.value.trim() !== '') {
-          label.classList.add('active');
-        } else {
-          label.classList.remove('active');
-        }
-      }
-
-      input.addEventListener('focus', () => {
-        label.classList.add('active');
-        bar.style.width = '100%';
-      });
-
-      input.addEventListener('blur', () => {
-        if (input.value.trim() === '') {
-          label.classList.remove('active');
-        }
-        bar.style.width = '0';
-      });
-
-      input.addEventListener('input', updateLabelAndBar);
-      updateLabelAndBar();
-    });
-  });
-</script>
 {% endblock %}
