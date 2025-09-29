@@ -16,9 +16,7 @@ _tls = threading.local()
 
 
 def set_connection_context(conn, is_pooled=True):
-    """
-    将连接上下文信息存入线程局部变量
-    """
+    """将连接上下文信息存入线程局部变量"""
     cid = str(uuid.uuid4())[:8]
     if not is_pooled:
         cid += "-tmp"
@@ -54,15 +52,14 @@ def _cleanup_tls():
 db_pool = None
 
 try:
-    # 使用 SimpleConnectionPool 而非 ThreadedConnectionPool
-    # 避免 getconn/putconn 内部调用 set_session 导致事务冲突
     db_pool = psycopg2.pool.SimpleConnectionPool(
         minconn=Config.DB_MIN_CONN,
         maxconn=Config.DB_MAX_CONN,
         dsn=Config.DATABASE_URL,
         cursor_factory=psycopg2.extras.RealDictCursor,
+
         keepalives=1,
-        keepalives_idle=60,
+        keepalives_idle=30,
         keepalives_interval=10,
         keepalives_count=5,
     )
@@ -74,22 +71,26 @@ except Exception as e:
 
 def is_connection_usable(conn) -> bool:
     """
-    检查连接是否可用（防止 SSL 断连、EOF 等）
+    检查连接是否可用（防止 SSL 断连、EOF、服务端关闭等）
     """
     try:
         if conn.closed:
+            logger.debug("连接已关闭")
             return False
 
         try:
             if conn.fileno() < 0:
+                logger.debug("连接文件描述符无效")
                 return False
         except (OSError, ValueError):
+            logger.debug("连接文件描述符访问异常")
             return False
 
         status = conn.get_transaction_status()
-        if status != 0:  # 0 = IDLE, 其他如 1=INTRANS, 2=INERROR
+        if status != 0:  # 0 = IDLE
+            logger.debug(f"连接处于事务中 (状态: {status})，需要回滚")
             try:
-                conn.rollback()  # 强制回滚，进入 IDLE
+                conn.rollback()
             except:
                 return False
 
@@ -123,6 +124,10 @@ def get_db():
     conn = None
     try:
         conn = db_pool.getconn()
+        if conn is None:
+            raise Exception("从连接池获取到 None 连接")
+
+        # 检查连接是否可用
         if is_connection_usable(conn):
             conn.autocommit = False
             set_connection_context(conn, is_pooled=True)
@@ -150,7 +155,7 @@ def get_db():
             Config.DATABASE_URL,
             cursor_factory=psycopg2.extras.RealDictCursor,
             keepalives=1,
-            keepalives_idle=60,
+            keepalives_idle=30,
             keepalives_interval=10,
             keepalives_count=5,
         )
@@ -179,11 +184,11 @@ def close_db(conn):
         return
 
     try:
-        # 1. 确保事务结束
-        if conn.get_transaction_status() != 0:
+        status = conn.get_transaction_status()
+        if status != 0:
             try:
                 conn.rollback()
-                logger.debug(f"🧹 回滚未完成事务: {cid}")
+                logger.debug(f"🧹 强制回滚未完成事务: {cid}")
             except Exception as e:
                 logger.warning(f"回滚失败 ({cid}): {e}")
                 try:
@@ -193,19 +198,13 @@ def close_db(conn):
                 except:
                     pass
 
-        # 2. 重置会话状态，避免 putconn 触发 set_session 出错
         try:
             cursor = conn.cursor()
-            cursor.execute("RESET ALL")  # 重置客户端编码、时区等
+            cursor.execute("RESET ALL")
             cursor.close()
         except Exception as e:
             logger.warning(f"RESET ALL 失败 ({cid}): {e}")
-            try:
-                conn.rollback()
-            except:
-                pass
 
-        # 3. 归还或关闭连接
         if is_pooled_connection():
             try:
                 db_pool.putconn(conn)
@@ -243,11 +242,11 @@ def get_db_cursor(commit_on_success: bool = True):
     """
     conn = None
     cursor = None
-    cid = get_connection_id()  # 初始化为 unknown 或上一个值
+    cid = "unknown"
 
     try:
         conn = get_db()
-        cid = get_connection_id()  # 更新为真实连接 ID
+        cid = get_connection_id()
         cursor = conn.cursor()
         yield cursor
 
