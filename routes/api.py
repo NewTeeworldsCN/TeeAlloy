@@ -39,7 +39,6 @@ def _decrypt_and_match(encrypted_token_bytes: bytes, salt: str, target_token: st
         if not isinstance(decrypted, str):
             logger.warning("Invalid decrypted")
             return False
-        logger.warning(f"Decrypted: {decrypted.strip()}, Target: {target_token}")
         import hmac
         return hmac.compare_digest(decrypted.strip(), target_token)
     except Exception as e:
