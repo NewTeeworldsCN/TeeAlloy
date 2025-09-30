@@ -65,7 +65,7 @@ namespace teealloy
     struct UserInfo
     {
         std::string user_id;
-        std::string username;
+        bool is_banned;
         std::string nickname;
         int reputation = 0;
         std::string created_at;
@@ -213,7 +213,7 @@ namespace teealloy
                     auto j = nlohmann::json::parse(res->body);
                     auto user = j["user"];
                     out_user.user_id = user.value("user_id", "");
-                    out_user.username = user.value("username", "");
+                    out_user.is_banned = user.value("is_banned", false);
                     out_user.nickname = user.value("nickname", "");
                     out_user.reputation = user.value("reputation", 0);
                     out_user.created_at = user.value("created_at", "");
@@ -233,7 +233,7 @@ namespace teealloy
                     auto j = nlohmann::json::parse(res->body);
                     auto user = j["user"];
                     out_user.user_id = user.value("user_id", "");
-                    out_user.username = user.value("username", "");
+                    out_user.is_banned = user.value("is_banned", false);
                     out_user.nickname = user.value("nickname", "");
                     out_user.reputation = user.value("reputation", 0);
                     out_user.created_at = user.value("created_at", "");

@@ -8,6 +8,7 @@ from extensions import csrf
 
 from models.database import get_db_cursor
 from models.user import get_user_by_id
+from models.reputation import is_user_banned
 import utils
 from utils.decorators import require_api_auth
 
@@ -103,7 +104,7 @@ def verify_game_token():
         "success": True,
         "user": {
             "user_id": user['id'],
-            "username": user['username'],
+            "is_banned": is_user_banned(),
             "nickname": user.get('nickname'),
             "reputation": reputation,
             "created_at": user['created_at']

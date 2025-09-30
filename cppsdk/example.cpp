@@ -42,7 +42,7 @@ int main()
     {
         if (res)
         {
-            std::cout << "[Async] Success: " << u.username << "\n";
+            std::cout << "[Async] Success: " << u.nickname << "\n";
         } else {
             std::cerr << "[Async] Failed: " << res.error_message << "\n";
         }
