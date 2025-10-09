@@ -33,6 +33,7 @@ SOFTWARE.
 #include <future>
 #include <thread>
 #include <memory>
+#include <exception>
 
 namespace teealloy
 {
@@ -66,7 +67,6 @@ namespace teealloy
     {
         std::string user_id;
         bool is_banned;
-        std::string nickname;
         int reputation = 0;
         std::string created_at;
     };
@@ -97,8 +97,8 @@ namespace teealloy
         }
 
         Result health_check();
-        Result verify_game_token(const std::string &game_token, UserInfo &out_user);
-        void verify_game_token_async(const std::string &game_token, VerifyCallback callback);
+        Result verify_game_token(const std::string &game_token, const std::string &nickname, UserInfo &out_user);
+        void verify_game_token_async(const std::string &game_token, const std::string &nickname, VerifyCallback callback);
 
     private:
         std::string host_;
@@ -185,11 +185,11 @@ namespace teealloy
         }
     }
 
-    inline Result AuthClient::verify_game_token(const std::string &game_token, UserInfo &out_user)
+    inline Result AuthClient::verify_game_token(const std::string &game_token, const std::string &nickname, UserInfo &out_user)
     {
         try
         {
-            nlohmann::json payload = {{"game_token", game_token}};
+            nlohmann::json payload = {{"game_token", game_token}, {"nickname", nickname}};
             std::string body = payload.dump();
             httplib::Headers headers{
                 {"Content-Type", "application/json"},
@@ -214,7 +214,6 @@ namespace teealloy
                     auto user = j["user"];
                     out_user.user_id = user.value("user_id", "");
                     out_user.is_banned = user.value("is_banned", false);
-                    out_user.nickname = user.value("nickname", "");
                     out_user.reputation = user.value("reputation", 0);
                     out_user.created_at = user.value("created_at", "");
                 }
@@ -234,16 +233,15 @@ namespace teealloy
                     auto user = j["user"];
                     out_user.user_id = user.value("user_id", "");
                     out_user.is_banned = user.value("is_banned", false);
-                    out_user.nickname = user.value("nickname", "");
                     out_user.reputation = user.value("reputation", 0);
                     out_user.created_at = user.value("created_at", "");
                 }
                 return result;
             }
         }
-        catch (...)
+        catch (const std::exception &e)
         {
-            return {false, ErrorCode::NetworkError, "Request failed"};
+            return {false, ErrorCode::NetworkError, "Request failed:" + std::string(e.what())};
         }
     }
 
@@ -263,9 +261,9 @@ namespace teealloy
                     auto j = nlohmann::json::parse((*res)->body);
                     return {false, ErrorCode::AuthFailed, j.value("error", "unknown")};
                 }
-                catch (...)
+                catch (const std::exception &e)
                 {
-                    return {false, ErrorCode::HTTPError, "HTTP " + std::to_string((*res)->status)};
+                    return {false, ErrorCode::HTTPError, "HTTP " + std::to_string((*res)->status) + std::string(e.what())};
                 }
             }
             try
@@ -280,9 +278,9 @@ namespace teealloy
                     return {false, ErrorCode::AuthFailed, j.value("error", "unknown")};
                 }
             }
-            catch (...)
+            catch (const std::exception &e)
             {
-                return {false, ErrorCode::ParseError, "JSON parse error"};
+                return {false, ErrorCode::ParseError, "JSON parse error:" + std::string(e.what())};
             }
         }
         else
@@ -308,19 +306,19 @@ namespace teealloy
                     return {false, ErrorCode::AuthFailed, j.value("error", "unknown")};
                 }
             }
-            catch (...)
+            catch (const std::exception &e)
             {
-                return {false, ErrorCode::ParseError, "JSON parse error"};
+                return {false, ErrorCode::ParseError, "JSON parse error:" + std::string(e.what())};
             }
         }
     }
 
-    inline void AuthClient::verify_game_token_async(const std::string &game_token, VerifyCallback callback)
+    inline void AuthClient::verify_game_token_async(const std::string &game_token, const std::string &nickname, VerifyCallback callback)
     {
         std::thread([=]()
                     {
         UserInfo user;
-        Result result = verify_game_token(game_token, user);
+        Result result = verify_game_token(game_token, nickname, user);
         if (callback) {
             callback(result, user);
         } })

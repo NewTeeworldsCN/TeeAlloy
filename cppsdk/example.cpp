@@ -38,7 +38,7 @@ int main()
         std::cerr << "Error: " << result.error_message << std::endl;
     }
 
-    client.verify_game_token_async("TOKEN", [](teealloy::Result res, teealloy::UserInfo u)
+    client.verify_game_token_async("TOKEN", "NICKNAME", [](teealloy::Result res, teealloy::UserInfo u)
     {
         if (res)
         {

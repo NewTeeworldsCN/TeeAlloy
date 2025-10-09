@@ -46,43 +46,74 @@ def _decrypt_and_match(encrypted_token_bytes: bytes, salt: str, target_token: st
         logger.warning(f"Decryption failed: {e}")
         return False
 
-
 @api_bp.route('/auth/verify-game-token', methods=['POST'])
 @require_api_auth
 @csrf.exempt
 def verify_game_token():
     data = request.get_json()
     token = data.get("game_token")
+    nickname = data.get("nickname")
 
     if not token or not isinstance(token, str) or len(token.strip()) == 0:
         return jsonify({"success": False, "error": "Missing or invalid game_token"}), 400
+    if not nickname or not isinstance(nickname, str) or len(nickname.strip()) == 0:
+        return jsonify({"success": False, "error": "Missing or invalid nickname"}), 400
+
     token = token.strip()
+    nickname = nickname.strip()
 
     with get_db_cursor() as cursor:
         cursor.execute("""
-            SELECT ug.user_id, ug.game_token, ug.salt
-            FROM taUserGame ug
-            WHERE ug.created_at > NOW() - INTERVAL '90 days'
-              AND ug.salt IS NOT NULL
-        """)
-        records = cursor.fetchall()
+            SELECT id FROM taUsers WHERE nickname = %s
+        """, (nickname,))
+        user_records = cursor.fetchall()
+
+    if not user_records:
+        return jsonify({"success": False, "error": "User not found"}), 404
 
     matched_user_id = None
-    for record in records:
-        if _decrypt_and_match(record['game_token'], record['salt'], token):
-            matched_user_id = record['user_id']
+
+    for user_record in user_records:
+        user_id = user_record['id']
+
+        with get_db_cursor() as cursor:
+            cursor.execute("""
+                SELECT game_token, salt
+                FROM taUserGame
+                WHERE user_id = %s
+                  AND created_at > NOW() - INTERVAL '90 days'
+                  AND salt IS NOT NULL
+            """, (user_id,))
+            game_record = cursor.fetchone()
+
+        if not game_record:
+            continue
+
+        if _decrypt_and_match(game_record['game_token'], game_record['salt'], token):
+            matched_user_id = user_id
             break
 
     if not matched_user_id:
-        logger.warning(f"Token verification failed for server={g.authenticated_server}")
+        logger.warning(
+            f"Token verification failed (invalid/expired or no active token) | "
+            f"nickname='{nickname}' | "
+            f"server={g.authenticated_server}"
+        )
         return jsonify({
             "success": False,
             "error": "Invalid or expired game_token"
         }), 401
 
-    user = get_user_by_id(matched_user_id)
+    with get_db_cursor() as cursor:
+        cursor.execute("""
+            SELECT id, nickname, created_at
+            FROM taUsers
+            WHERE id = %s
+        """, (matched_user_id,))
+        user = cursor.fetchone()
+
     if not user:
-        return jsonify({"success": False, "error": "User not found"}), 404
+        return jsonify({"success": False, "error": "User not found"}), 500
 
     with get_db_cursor() as cursor:
         cursor.execute("""
@@ -96,21 +127,27 @@ def verify_game_token():
         reputation = row['new_score'] if row else 0
 
     with get_db_cursor() as cursor:
-        cursor.execute("UPDATE taUserGame SET last_used_at = NOW() WHERE user_id = %s", (matched_user_id,))
+        cursor.execute(
+            "UPDATE taUserGame SET last_used_at = NOW() WHERE user_id = %s",
+            (matched_user_id,)
+        )
 
-    logger.info(f"Game token verified | user_id={matched_user_id} | server={g.authenticated_server}")
+    logger.info(
+        f"Game token verified | "
+        f"user_id={matched_user_id} | "
+        f"nickname={nickname} | "
+        f"server={g.authenticated_server}"
+    )
 
     return jsonify({
         "success": True,
         "user": {
             "user_id": user['id'],
-            "is_banned": is_user_banned(),
-            "nickname": user.get('nickname'),
             "reputation": reputation,
-            "created_at": user['created_at']
+            "created_at": user['created_at'],
+            "is_banned": is_user_banned(matched_user_id)
         }
     })
-
 
 
 @api_bp.route('/healthz', methods=['GET'])

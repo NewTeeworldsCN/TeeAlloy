@@ -145,5 +145,6 @@ CREATE TRIGGER trg_update_tausergame_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-CREATE INDEX idx_reputation_user ON taUsersReputationLogs(user_id, created_at DESC);
-CREATE INDEX idx_usertoken_user ON taUserGame(user_id);
+CREATE INDEX IF NOT EXISTS idx_reputation_user ON taUsersReputationLogs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_usertoken_user ON taUserGame(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_nickname ON taUsers(nickname);

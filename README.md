@@ -37,13 +37,14 @@ POST /api/auth/verify-game-token
 请求头:
 ```
 Content-Type: application/json
-Authorization: Bearer <API-Key>
-X-Server-Address: <请求服务器IP>
+X-API-Key: <API-Key>
+X-Server-Address: <API-Key在后台面板对应的地址>
 ```
 请求体:
 ```json
 {
-  "game_token": "string"
+  "game_token": "string",
+  "nickname": "string"
 }
 ```
 成功响应:
@@ -51,11 +52,10 @@ X-Server-Address: <请求服务器IP>
 {
   "success": true,
   "user": {
-    "user_id": UUID,
-    "username": String,
-    "nickname": String,
-    "reputation": Int,
-    "created_at": Timestamp
+    "user_id": "UUID",
+    "reputation": "Int",
+    "is_banned": "Boolean",
+    "created_at": "Timestamp"
   }
 }
 ```
@@ -66,6 +66,12 @@ X-Server-Address: <请求服务器IP>
 {
   "success": false,
   "error": "Missing or invalid game_token"
+}
+
+400 Bad Request
+{
+  "success": false,
+  "error": "Missing or invalid nickname"
 }
 
 401 Unauthorized
@@ -79,4 +85,11 @@ X-Server-Address: <请求服务器IP>
   "success": false,
   "error": "User not found"
 }
+
+500 Internal Server Error
+{
+  "success": false,
+  "error": "User not found"
+}
+
 ```
